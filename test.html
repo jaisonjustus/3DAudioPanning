@@ -1,0 +1,112 @@
+<html>
+	<head>
+		<style>
+			body	{
+				margin: 0;
+				padding: 0;
+				border: 0;
+			}
+		</style>
+		<script type="text/javascript" src="components/threejs/build/three.js"></script>
+		<!-- <script src="three/build/Three.js"></script> -->
+		
+
+	</head>
+	<body>
+		<div id = "container" >
+			
+		</div>
+
+		<script>
+// This source is the javascript needed to build a sky box in **three.js**
+// It is the source about this [blog post](/blog/2011/08/15/lets-do-a-sky/).
+
+// ## Now lets start
+
+// declare a bunch of variable we will need later
+var startTime	= Date.now();
+var container;
+var camera, scene, renderer, stats;
+var skyboxMesh;
+
+// ## bootstrap functions
+// initialiaze everything
+init();
+// make it move			
+animate();
+
+// ## Initialize everything
+function init() {
+	// test if webgl is supported
+	// if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
+
+	// create the camera
+
+
+	// create the Scene
+	scene = new THREE.Scene();
+
+	camera = new THREE.Camera( 70, window.innerWidth / window.innerHeight, 1, 100000 );
+	camera.position.set(0,-0.5,0);
+	camera.lookAt(scene.position);
+	scene.add(camera);
+
+	var light = new THREE.PointLight(0xffffff);
+	light.position.set(0,250,0);
+	scene.add(light);
+
+	var imagePrefix = "images/";
+	var directions  = ["posx", "negx", "posy", "negy", "posz", "negz"];
+	var imageSuffix = ".jpg";
+	var skyGeometry = new THREE.CubeGeometry( 5000, 5000, 5000 );	
+
+	var materialArray = [];
+	for (var i = 0; i < 6; i++)
+		materialArray.push( new THREE.MeshBasicMaterial({
+			map: THREE.ImageUtils.loadTexture( imagePrefix + directions[i] + imageSuffix ),
+			side: THREE.BackSide
+		}));
+	var skyMaterial = new THREE.MeshFaceMaterial( materialArray );
+	var skyBox = new THREE.Mesh( skyGeometry, skyMaterial );
+	scene.add( skyBox );
+	console.log(scene);
+	// scene.add(camera);
+
+	// ## End of the Skybox Code
+
+	// create the container element
+	// container = document.createElement( 'div' );
+	// document.body.appendChild(container);
+	var container = document.getElementById('container');
+	console.log(container);
+	// init the WebGL renderer and append it to the Dom
+	renderer = new THREE.WebGLRenderer();
+	renderer.setSize( window.innerWidth, window.innerHeight );
+	container.appendChild( renderer.domElement );
+	
+	// init the Stats and append it to the Dom - performance vuemeter
+	// stats = new Stats();
+	// stats.domElement.style.position = 'absolute';
+	// stats.domElement.style.top = '0px';
+	// container.appendChild( stats.domElement );
+}
+
+// ## Animate and Display the Scene
+function animate() 
+{
+  requestAnimationFrame( animate );
+	render();		
+	// update();
+}
+
+
+function render() 
+{
+	renderer.render( scene, camera );
+}
+
+
+
+		</script>
+	</body>
+</html>

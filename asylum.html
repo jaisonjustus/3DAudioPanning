@@ -1,0 +1,418 @@
+<html>
+	<head>
+		<style>
+			body	{
+				margin: 0;
+				padding: 0;
+				border: 0;
+			}
+		</style>
+		<script type="text/javascript" src="components/threejs/build/three.js"></script>
+		<!-- <script src="three/build/Three.js"></script> -->
+		
+		<script>
+			window.AudioContext = (
+			  window.AudioContext ||
+			  window.webkitAudioContext ||
+			  null
+			);
+
+			if (!AudioContext) {
+			  throw new Error("AudioContext not supported!");
+			} 
+
+			// Create a new audio context.
+			var ctx = new AudioContext();
+
+			// Create a AudioGainNode to control the main volume.
+			// var mainVolume = ctx.createGain();
+			// Connect the main volume node to the context destination.
+			// mainVolume.connect(ctx.destination);
+
+			// Create an object with a sound source and a volume control.
+			var sound = {}, sound2 = {}, sound3 = {}, sound4 = {};
+
+			sound.source = ctx.createBufferSource();
+			sound.volume = ctx.createGain();
+			sound.volume.gain.value = 5;
+			sound.panner = ctx.createPanner();
+			sound.source.connect(sound.volume);
+			sound.volume.connect(sound.panner);
+			sound.panner.connect(ctx.destination);
+			sound.panner.setPosition(0, 0, -30);
+			sound.source.loop = true;
+
+			sound2.source = ctx.createBufferSource();
+			sound2.volume = ctx.createGain();
+			sound2.volume.gain.value = 0.3;
+			// sound2.panner = ctx.createPanner();
+			// sound2.source.connect(sound2.volume);
+			sound2.source.connect(sound2.volume);
+			sound2.volume.connect(ctx.destination);
+			
+			// sound2.panner.setPosition(0, 0, -30);
+			sound2.source.loop = true;
+
+			sound3.source = ctx.createBufferSource();
+			sound3.volume = ctx.createGain();
+			sound3.volume.gain.value = 5;
+			sound3.panner = ctx.createPanner();
+			sound3.source.connect(sound3.volume);
+			sound3.volume.connect(sound3.panner);
+			sound3.panner.connect(ctx.destination);
+			sound3.panner.setPosition(68, 0, 33);
+			sound3.source.loop = true;
+
+			// sound4.source = ctx.createBufferSource();
+			// sound4.volume = ctx.createGain();
+			// sound4.volume.gain.value = 5;
+			// sound4.panner = ctx.createPanner();
+			// sound4.source.connect(sound4.volume);
+			// sound4.volume.connect(sound4.panner);
+			// sound4.panner.connect(ctx.destination);
+			// sound4.panner.setPosition(0, 0, -70);
+			// sound4.source.loop = true;
+
+
+
+			// Load a sound file using an ArrayBuffer XMLHttpRequest.
+			var request = new XMLHttpRequest();
+			request.open("GET", "images/tele.mp3", true);
+			request.responseType = "arraybuffer";
+			request.onload = function(e) {
+
+			  // Create a buffer from the response ArrayBuffer.
+			  var buffer = ctx.createBuffer(this.response, false);
+			  sound.buffer = buffer;
+
+			  // Make the sound source use the buffer and start playing it.
+			  sound.source.buffer = sound.buffer;
+			  sound.source.start(ctx.currentTime);
+			};
+			request.send();
+
+			var request2 = new XMLHttpRequest();
+			request2.open("GET", "images/bgscore.mp3", true);
+			request2.responseType = "arraybuffer";
+			request2.onload = function(e) {
+
+			  // Create a buffer from the response ArrayBuffer.
+			  var buffer = ctx.createBuffer(this.response, false);
+			  sound2.buffer = buffer;
+
+			  // Make the sound source use the buffer and start playing it.
+			  sound2.source.buffer = sound2.buffer;
+			  sound2.source.start(ctx.currentTime);
+			};
+			request2.send();
+
+			var request3 = new XMLHttpRequest();
+			request3.open("GET", "images/robo.mp3", true);
+			request3.responseType = "arraybuffer";
+			request3.onload = function(e) {
+
+			  // Create a buffer from the response ArrayBuffer.
+			  var buffer = ctx.createBuffer(this.response, false);
+			  sound3.buffer = buffer;
+
+			  // Make the sound source use the buffer and start playing it.
+			  sound3.source.buffer = sound3.buffer;
+			  sound3.source.start(ctx.currentTime);
+			};
+			request3.send();
+
+			// var request4 = new XMLHttpRequest();
+			// request4.open("GET", "images/footstep.mp3", true);
+			// request4.responseType = "arraybuffer";
+			// request4.onload = function(e) {
+
+			//   // Create a buffer from the response ArrayBuffer.
+			//   var buffer = ctx.createBuffer(this.response, false);
+			//   sound4.buffer = buffer;
+
+			//   // Make the sound source use the buffer and start playing it.
+			//   sound3.source.buffer = sound3.buffer;
+			//   sound3.source.start(ctx.currentTime);
+			// };
+			// request4.send();
+
+			var renderer = new THREE.WebGLRenderer();
+			
+			var width = window.innerWidth+48;
+			var height = window.innerHeight+48;
+			
+			block_size = 50;
+			wall_height = 30;
+			wall_thickness = 5;
+			map_difficulty = 3;
+			
+			deltaX = -10;
+			old_mouseX = 0;
+			actualLookSpeed = 1;
+			thetaD = 0;
+			actualMoveSpeed = 1;
+			
+			moveForward = false;
+			moveBackward = false;
+			moveLeft = false;
+			moveRight = false;
+			
+			collision = true;
+			collision_distance = 15;
+			
+			function init() {
+				alreadyCovered();
+				
+				generateMap();
+				
+				renderer.setSize( width-50, height-50 );
+				renderer.render( scene, camera );
+				container = document.getElementById( 'container' );
+				container.appendChild( renderer.domElement );
+				animate();
+			}
+			
+			function generateMap() {
+				
+				outline();
+				
+				// wallVGeom = new THREE.CubeGeometry( wall_thickness, wall_height, block_size);
+				// wallHGeom = new THREE.CubeGeometry( block_size, wall_height, wall_thickness);
+				
+				// arrHwalls = [ [1,0,0], [0,0,1] ];
+				// arrVwalls = [ [0,0], [0,1], [1,0] ];
+				
+				// offset_x =  block_size * map_difficulty / 2;
+				// offset_z =  block_size * map_difficulty / 2;
+				// offset = new THREE.Vector3(offset_x, 0, offset_z);
+				
+				// for(i=0; i < arrHwalls.length; i++){
+				// 	for(j=0; j < arrHwalls[i].length; j++){
+				// 		if(arrHwalls[i][j] == 1) {
+							
+				// 			wall = new THREE.Mesh(wallHGeom, wallMat);
+				// 			wall.position.set(j*block_size+block_size/2, 0, (i+1)*block_size);
+				// 			wall.position.sub(wall.position, offset);
+				// 			scene.add(wall);
+				// 		}
+				// 	}
+				// }
+				
+				// for(i=0; i < arrVwalls.length; i++){
+				// 	for(j=0; j < arrVwalls[i].length; j++){
+				// 		if(arrVwalls[i][j] == 1) {
+							
+				// 			wall = new THREE.Mesh(wallVGeom, wallMat);
+				// 			wall.position.set((j+1)*block_size, 0, i*block_size + block_size/2);
+				// 			wall.position.sub(wall.position, offset);
+				// 			scene.add(wall);
+				// 		}
+				// 	}
+				// }
+			}
+			
+			function outline() {
+				
+				BwallVGeom = new THREE.CubeGeometry( wall_thickness, wall_height, block_size * map_difficulty);
+				BwallHGeom = new THREE.CubeGeometry( block_size * map_difficulty, wall_height, wall_thickness);
+				
+				wall_texture = new THREE.ImageUtils.loadTexture("images/nx.jpg");
+				wall_texture.wrapS = wall_texture.wrapT = THREE.RepeatWrapping;
+				// wall_texture.repeat.set(5,5);
+				wallMat = new THREE.MeshBasicMaterial({map: wall_texture,  side: THREE.DoubleSide});
+				wallMat.overdraw = true;
+				
+				BwallH1 = new THREE.Mesh(BwallHGeom, wallMat);
+				BwallH2 = new THREE.Mesh(BwallHGeom, wallMat);
+				BwallV1 = new THREE.Mesh(BwallVGeom, wallMat);
+				BwallV2 = new THREE.Mesh(BwallVGeom, wallMat);
+				
+				BwallH1.position.z = block_size;
+				BwallH2.position.z = -block_size * map_difficulty / 2;
+				BwallV1.position.x = block_size * map_difficulty / 2;
+				BwallV2.position.x = -block_size * map_difficulty / 2;
+				
+				scene.add(BwallH1);
+				scene.add(BwallH2);
+				scene.add(BwallV1);
+				scene.add(BwallV2);
+				
+				
+				floorGeom = new THREE.CubeGeometry( block_size * map_difficulty, wall_thickness, block_size *10);
+				floor_texture = new THREE.ImageUtils.loadTexture("images/floor-roof.png");
+				floor_texture.wrapS = floor_texture.wrapT = THREE.RepeatWrapping;
+				// floor_texture.repeat.set(10,10);
+				floorMat = new THREE.MeshBasicMaterial({map: floor_texture});
+				floorMat.overdraw = true;
+				floor = new THREE.Mesh(floorGeom,floorMat);
+				
+				roofGeom = floorGeom;
+				roof_texture = new THREE.ImageUtils.loadTexture("images/floor-roof.png");
+				roof_texture.wrapS = roof_texture.wrapT = THREE.RepeatWrapping;
+				// roof_texture.repeat.set(10,10);
+				roofMat = new THREE.MeshBasicMaterial({map: roof_texture});
+				// roofMat = new THREE.MeshBasicMaterial({wireframe: true});
+				roof = new THREE.Mesh(roofGeom,roofMat);
+
+				var test = new THREE.CubeGeometry(5,50, 5);
+				var pillar_texture = new THREE.ImageUtils.loadTexture("images/pillar.png");	
+				var testMeshMaterial = new THREE.MeshBasicMaterial({map: pillar_texture});
+				var testMesh = new THREE.Mesh(test, testMeshMaterial);
+				testMesh.position.x = 0;
+				testMesh.position.y = -10;
+				testMesh.position.z = -30;
+
+				
+				floor.position.y = -wall_height/2;
+				roof.position.y = wall_height/2;
+
+// 				var light = new THREE.PointLight( 0xff0000, 2, 30 );
+// light.position.set( 0, 30, 0 );
+// scene.add( light );
+
+
+				
+				scene.add(floor);
+				scene.add(roof);
+				scene.add(testMesh);
+			}
+			
+			function alreadyCovered() {
+				scene = new THREE.Scene();
+				camera = new THREE.PerspectiveCamera( 45, width/height, 1, 40000 );
+				camera.position.set(0,0,-70); //center
+				//camera.position.set(0,200,130); //top view //remove roof
+				camera.lookAt(new THREE.Vector3(0,0,0));
+				
+				scene.add(camera);
+			}
+			
+			function animate() {
+				//chain it with init
+				requestAnimationFrame( animate );
+				render();
+			}
+			function render() {
+				//to do in between animations
+				controls();
+				renderer.render( scene, camera );
+				//console.log(camera.position.x, camera.position.x, camera.position.x, thetaD);
+				//console.log();
+			}
+			
+			function mouseControls() {
+				thetaD -= deltaX * actualLookSpeed;
+				theta = thetaD * Math.PI / 180;
+				
+				lookPoint = new THREE.Vector3(0,0,0);
+				lookPoint.set(Math.sin(theta), 0, Math.cos(theta));
+				lookPoint.add(camera.position);
+				camera.lookAt(this.lookPoint);
+				var p = camera.matrixWorld.getPosition();
+				// console.log(p);
+				ctx.listener.setPosition(p.x, p.y, p.z);
+				deltaX = 0;
+			}
+			
+			function onMouseMove(event) {
+				deltaX = event.clientX - old_mouseX;
+				old_mouseX = event.clientX;
+			}
+			
+			
+			function controls() {
+				mouseControls();
+				
+				// detectCollision();
+				keyboardControls(thetaD);
+			}
+			
+			function detectCollision(movePoint) {
+				ray = new THREE.Raycaster(camera.position, movePoint );
+				intersects = ray.intersectObjects( scene.children );
+				if(intersects[0].distance < collision_distance)
+					collision = true;
+				else collision = false;
+			}
+			
+			function keyboardControls(thetaD) {
+				
+				if(moveLeft) thetaD += 90;
+				else if(moveRight) thetaD -= 90;
+				else if(moveBackward) thetaD += 180;
+				
+				theta = thetaD * Math.PI / 180;
+				movePoint = new THREE.Vector3(0,0,0);
+				movePoint.set(Math.sin(theta), 0, Math.cos(theta));
+				detectCollision(movePoint);
+				
+				if((moveForward || moveLeft || moveRight || moveBackward) && !collision)
+				camera.position.add(this.movePoint);
+				var p = camera.matrixWorld.getPosition();
+				// var p = new THREE.Vector3.getPositionFromMatrix(camera);
+				
+				// sound4.panner.setPosition(p.x, p.y, p.z);
+				ctx.listener.setPosition(p.x, p.y, p.z);
+
+				// console.log(ctx.listener, p);
+			}
+			
+			onKeyDown = function ( event ) {
+				
+				switch( event.keyCode ) {
+				
+				case 38: /*up*/
+				case 87: /*W*/ moveForward = true; break;
+				
+				case 37: /*left*/
+				case 65: /*A*/ moveLeft = true; break;
+				
+				case 40: /*down*/
+				case 83: /*S*/ moveBackward = true; break;
+				
+				case 39: /*right*/
+				case 68: /*D*/ moveRight = true; break;
+			}
+			};
+			
+			onKeyUp = function ( event ) {
+				
+				switch( event.keyCode ) {
+					
+					case 38: /*up*/
+					case 87: /*W*/ moveForward = false; break;
+					
+					case 37: /*left*/
+					case 65: /*A*/ moveLeft = false; break;
+					
+					case 40: /*down*/
+					case 83: /*S*/ moveBackward = false; break;
+					
+					case 39: /*right*/
+					case 68: /*D*/ moveRight = false; break;
+				}
+			};
+			
+			
+			document.addEventListener( 'mousemove', bind( this, onMouseMove ), false );
+			document.addEventListener( 'keydown', bind( this, onKeyDown ), false );
+			document.addEventListener( 'keyup', bind( this, onKeyUp ), false );
+			
+			function bind( scope, fn ) {
+				return function () {
+					fn.apply( scope, arguments );
+				};
+			};
+			
+			
+			
+		</script>
+		
+	</head>
+	
+	<body onload="init()" >
+		<div id = "container" >
+			
+		</div>
+	</body>
+</html>
