@@ -2,28 +2,18 @@ var TRON = TRON || {};
 
 var Asylum = TRON.Asylum = {
 
-	_viewport : {
-		width : window.innerWidth + 48,
-		height : window.innerHeight + 48
-	},
-
 	_cameraProperties : {
 		fov : 45,
-		aspect : this._viewport.width / this._viewport.height,
+		aspect : (window.innerWidth + 48) / (window.innerHeight + 48),
 		near : 1,
 		far : 40000
 	},
 
-	_renderer : new THREE.WebGLRenderer(),
+	_renderer : null,
 
-	_scene : new THREE.Scene(),
+	_scene : null,
 
-	_camera : new THREE.PerspectiveCamera(
-		this._cameraProperties.fov,
-		this._cameraProperties.aspect,
-		this._cameraProperties.near,
-		this._cameraProperties.far
-	),
+	_camera : null,
 
 	_placeCamera : function()	{
 		this._camera.position.set(0,0,-70);
@@ -35,18 +25,38 @@ var Asylum = TRON.Asylum = {
 
 	_textures : {
 		floorAndRoof : new THREE.ImageUtils.loadTexture("images/floor-and-roof.png"),
-		walls : new THREE.ImageUtils.loadTexture("images/walls.jpg")
-	}
+		walls : new THREE.ImageUtils.loadTexture("images/wall.jpg")
+	},
+
+	_prepareBasicComponents : function()	{
+		this._renderer = new THREE.WebGLRenderer();
+		this._renderer.setSize(window.innerWidth - 2, window.innerHeight - 2);
+
+		this._scene = new THREE.Scene();
+		
+		this._camera = new THREE.PerspectiveCamera(
+			this._cameraProperties.fov,
+			this._cameraProperties.aspect,
+			this._cameraProperties.near,
+			this._cameraProperties.far
+		);
+	},
+
+	_prepareDOM : function()	{
+		var container = document.getElementById('container');
+		container.appendChild(this._renderer.domElement);
+	},
 
 	_createFloorAndRoof : function()	{
 		var geometry = new THREE.CubeGeometry(150, 5, 500),
 				material = null;
 
 		this._textures.floorAndRoof.wrapS = this._textures.floorAndRoof.wrapT = THREE.RepeatWrapping;
-		material = new MeshBasicMaterial({ map : this._textures.floorAndRoof });
+		material = new THREE.MeshBasicMaterial({ map : this._textures.floorAndRoof });
 		material.overdraw = true;
 
-		this._gameElements.roof = this._gameElements.floor = new THREE.Mesh(geometry, material);
+		this._gameElements.floor = new THREE.Mesh(geometry, material);
+		this._gameElements.roof = new THREE.Mesh(geometry, material);
 		this._gameElements.roof.position.y = 15;
 		this._gameElements.floor.position.y = -15;
 	},
@@ -62,8 +72,10 @@ var Asylum = TRON.Asylum = {
 		material = new THREE.MeshBasicMaterial({ map: this._textures.walls });
 		material.overdraw = true;
 
-		this._gameElements.leftWall = this._gameElements.rightWall = new THREE.Mesh(geometry.horizontal, material);
-		this._gameElements.frontWall = this._gameElements.backWall = new THREE.Mesh(geometry.vertical, material);
+		this._gameElements.rightWall = new THREE.Mesh(geometry.horizontal, material)
+		this._gameElements.leftWall = new THREE.Mesh(geometry.horizontal, material);
+		this._gameElements.backWall = new THREE.Mesh(geometry.vertical, material);
+		this._gameElements.frontWall = new THREE.Mesh(geometry.vertical, material);
 
 		this._gameElements.frontWall.position.z = 50;
 		this._gameElements.backWall.position.z = -75;
@@ -73,14 +85,29 @@ var Asylum = TRON.Asylum = {
 
 	_addGameElementsToScene : function()	{
 		for(var element in this._gameElements)	{
-			
+			this._scene.add(this._gameElements[element]);
 		}
+	},
+
+	_render : function()	{
+		this._renderer.render(this._scene, this._camera);
+	},
+
+	_animate : function()	{
+		var that = this;
+
+		requestAnimationFrame(TRON.Asylum._animate);
+		TRON.Asylum._render();
 	},
 	
 	init : function()	{
-		_placeCamera();
-		_createFloorAndRoof();
-		_createBoundryWalls();
+		this._prepareBasicComponents();
+		this._prepareDOM();
+		this._placeCamera();
+		this._createFloorAndRoof();
+		this._createBoundryWalls();
+		this._addGameElementsToScene();
+		this._animate();
 	}
 
 }
