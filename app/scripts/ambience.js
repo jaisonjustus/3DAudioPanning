@@ -21,12 +21,23 @@ var Ambience = TRON.Ambience = {
 		telephone : {
 			source : 'telephone',
 			pos : { x : 0, y : 0, z : -30 },
-			gain : 5
+			gain : 0.3,
+			loop : true,
+			mode : '3D'
 		},
 		systemactivated : {
 			source : 'systemactivated',
 			pos : { x : 68, y : 0, z : 33 },
-			gain : 0.3
+			gain : 0.3,
+			loop : true,
+			mode : '3D'
+		},
+		bgscore : {
+			source : 'bgscore',
+			pos : { x : 0, y : 0, z : 0 },
+			gain : 1.5,
+			loop : true,
+			mode : '2D'
 		}
 	},
 
@@ -44,17 +55,27 @@ var Ambience = TRON.Ambience = {
 
 			tempSource.source = this._context.createBufferSource();
 			tempSource.volume = this._context.createGain();
-			tempSource.panner = this._context.createPanner();
-
 			tempSource.volume.gain.value = this._audioSources[source].gain;
-			tempSource.source.connect(tempSource.volume);
-			tempSource.volume.connect(tempSource.panner);
-			tempSource.panner.connect(this._context.destination);
-			tempSource.source.loop = true;
 
-			this._sounds[source] = tempSource;
-			this.setAmbienceSounds(this._audioSources[source].source, pos.x, pos.y, pos.z);
-			this._getSound(this._audioSources[source].source, this._attachSound, this);
+			if(this._audioSources[source].mode === '3D')	{
+				tempSource.panner = this._context.createPanner();
+				tempSource.source.connect(tempSource.volume);
+				tempSource.volume.connect(tempSource.panner);
+				tempSource.panner.connect(this._context.destination);
+				tempSource.source.loop = this._audioSources[source].mode
+				
+
+				this._sounds[source] = tempSource;
+				this.setAmbienceSounds(this._audioSources[source].source, pos.x, pos.y, pos.z);
+				this._getSound(this._audioSources[source].source, this._attachSound, this);
+			}else	{
+				tempSource.source.connect(tempSource.volume);
+				tempSource.volume.connect(this._context.destination);
+				tempSource.source.loop = this._audioSources[source].mode
+
+				this._sounds[source] = tempSource;
+				this._getSound(this._audioSources[source].source, this._attachSound, this);
+			}
 		}
 	},
 

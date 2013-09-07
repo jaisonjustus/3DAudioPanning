@@ -44,7 +44,7 @@
 
 			sound2.source = ctx.createBufferSource();
 			sound2.volume = ctx.createGain();
-			sound2.volume.gain.value = 0.3;
+			sound2.volume.gain.value = 0.7;
 			// sound2.panner = ctx.createPanner();
 			// sound2.source.connect(sound2.volume);
 			sound2.source.connect(sound2.volume);
@@ -309,7 +309,7 @@
 				lookPoint.add(camera.position);
 				camera.lookAt(this.lookPoint);
 				var p = camera.matrixWorld.getPosition();
-				// console.log(p);
+
 				ctx.listener.setPosition(p.x, p.y, p.z);
 				deltaX = 0;
 			}
